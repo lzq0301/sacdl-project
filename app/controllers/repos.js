@@ -8,7 +8,7 @@ var ReposController = {
 
     //get '/search'
     search: function(req, res) {
-        Repo.search(req.query.query, function(err, data) {
+        Repo.search(req.query, function(err, data) {
             res.json(data);
         })
     }

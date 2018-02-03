@@ -26,13 +26,18 @@ var Repo = {
      * @return {[type]}            [void]
      */
     search: function(msg, callback) {
-        var msg = msg || {
-            q: 'bitcoin',
-            sort: 'forks',
-            order: 'desc',
-            per_page: 100
-        }
-
+        // var msg = msg || {
+        //     q: 'bitcoin',
+        //     sort: 'forks',
+        //     order: 'desc',
+        //     per_page: 100
+        // }
+        var msg = Object.assign({
+                    q: 'bitcoin',
+                    sort: 'forks',
+                    order: 'desc',
+                    per_page: 100
+                }, msg);
         github.search.repos(msg, function (err, data) {
             if (err) {return console.log(err)};
             var dataSet = treeData(data);
@@ -42,9 +47,10 @@ var Repo = {
 }
 
 // from /public/js/utils.js
-function treeData(data) {
+function treeData(dataSet) {
     var languages = {};
-
+    // languages[]'s index and also the language object index of result.children[]
+    var languagesIndex = 0;
     var result = {
         "name": "languages",
         "children": []
@@ -52,37 +58,51 @@ function treeData(data) {
 
     if (dataSet && dataSet.items) {
         var items = dataSet.items;
-
+       
         items.forEach(function(item, index) {
-            if (typeof languages[item.language] === "undefined") {
-                languages[item.language] = index;
+            var child = {
+                "name": item.full_name,
+                "watchers_count": item.watchers_count,
+                "forks_count": item.forks_count
             };
-        })
-
-        for (var language in languages) {
-            if (language === "null") {
-                language = "others";
-            };
-
-            var root = {
-                "name": language,
-                "children": []
-            };
-
-            items.forEach(function(item, index) {
-                var child = {
-                    "name": item.full_name,
-                    "watchers_count": item.watchers_count,
-                    "forks_count": item.forks_count
+            // current item language when null set name 'others'
+            var currentLanguage = item.language=="null"?"others":item.language;
+            if (typeof languages[currentLanguage] === "undefined") {
+                languages[currentLanguage] = languagesIndex++;
+                var root = {
+                    "name": currentLanguage,
+                    "children": []
                 };
+                result.children.push(root);
+                
+            }
+            result.children[languages[currentLanguage]].children.push(child);
+         })
 
-                if (item.language === language || (item.language === "null" && language === "others")) {
-                    root.children.push(child);
-                };
-            })
+        // for (var language in languages) {
+        //     if (language === "null") {
+        //         language = "others";
+        //     };
 
-            result.children.push(root);
-        }
+        //     var root = {
+        //         "name": language,
+        //         "children": []
+        //     };
+
+        //     items.forEach(function(item, index) {
+        //         var child = {
+        //             "name": item.full_name,
+        //             "watchers_count": item.watchers_count,
+        //             "forks_count": item.forks_count
+        //         };
+
+        //         if (item.language === language || (item.language === "null" && language === "others")) {
+        //             root.children.push(child);
+        //         };
+        //     })
+
+        //     result.children.push(root);
+        // }
     }
 
     return result;
